@@ -148,22 +148,22 @@ The Cloud Run Job service account (default: **gdrive-sync-sa**) must have:
 
 ```bash
 gcloud iam service-accounts create gdrive-sync-sa \
-  --project=my-rd-coe-demo-gen-ai
+  --project=$PROJECT_ID
 ```
 
 ### Grant required IAM roles:
 
 ```bash
-gcloud projects add-iam-policy-binding my-rd-coe-demo-gen-ai \
-  --member="serviceAccount:gdrive-sync-sa@my-rd-coe-demo-gen-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:gdrive-sync-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.objectAdmin"
 
-gcloud projects add-iam-policy-binding my-rd-coe-demo-gen-ai \
-  --member="serviceAccount:gdrive-sync-sa@my-rd-coe-demo-gen-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:gdrive-sync-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"
 
-gcloud projects add-iam-policy-binding my-rd-coe-demo-gen-ai \
-  --member="serviceAccount:gdrive-sync-sa@my-rd-coe-demo-gen-ai.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:gdrive-sync-sa@$PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/run.invoker"
 ```
 
@@ -176,7 +176,7 @@ For **every** folder listed in `config/config.json`:
 - Add:
 
 ```
-gdrive-sync-sa@my-rd-coe-demo-gen-ai.iam.gserviceaccount.com
+gdrive-sync-sa@$PROJECT_ID.iam.gserviceaccount.com
 ```
 
 - Give **Viewer** access  
@@ -208,7 +208,7 @@ Re-run a specific folder sync:
 ```bash
 gcloud run jobs execute sync-finance \
   --region asia-southeast1 \
-  --project my-rd-coe-demo-gen-ai
+  --project $PROJECT_ID
 ```
 
 ---
