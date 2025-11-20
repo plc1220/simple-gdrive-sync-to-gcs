@@ -1,0 +1,70 @@
+steps:
+  # 1. Build the Cloud Run job image
+  - id: build-sync-image
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/gdrive-sync-job', './cloudrun-job']
+
+  # 2. Push image
+  - id: push-sync-image
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/gdrive-sync-job']
+
+  # 3. Deploy + execute jobs
+  - id: deploy-sync-jobs
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+
+        # Install jq
+        apt-get update > /dev/null && apt-get install -y jq > /dev/null
+
+        REGION="asia-southeast1"
+        CONFIG="config/config.json"
+
+        # IMPORT CLOUD BUILD VARS INTO BASH VARS
+        # We assign the Cloud Build value ($PROJECT_ID) to a local Bash variable ($$PROJECT_ID)
+        # This makes the rest of the script cleaner to read.
+        PROJECT_ID="$PROJECT_ID" 
+        
+        SA_NAME="gdrive-sync-sa"
+        
+        # NOW USE DOUBLE $$ FOR EVERYTHING BELOW THIS LINE
+        SA_EMAIL="$$SA_NAME@$$PROJECT_ID.iam.gserviceaccount.com"
+
+        echo "Using Service Account: $$SA_EMAIL"
+
+        PROJECT_NUMBER=$$(gcloud projects describe $$PROJECT_ID --format="value(projectNumber)")
+
+        # Add IAM Binding
+        gcloud iam service-accounts add-iam-policy-binding $$SA_EMAIL \
+          --member="serviceAccount:$$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+          --role="roles/iam.serviceAccountUser" \
+          --condition=None || true
+
+        # Loop through config using jq
+        jq -c '.folders[]' "$$CONFIG" | while read f; do
+          
+          NAME=$$(echo "$$f" | jq -r '.name' | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g')
+          FOLDER_ID=$$(echo "$$f" | jq -r '.id')
+          BUCKET="mediaprima-$$NAME"
+
+          echo "Processing: $$NAME -> $$BUCKET"
+
+          gcloud storage buckets create "gs://$$BUCKET" \
+            --project="$$PROJECT_ID" \
+            --location="$$REGION" || true
+
+          gcloud run jobs deploy "sync-$$NAME" \
+            --image "gcr.io/$$PROJECT_ID/gdrive-sync-job" \
+            --region "$$REGION" \
+            --service-account "$$SA_EMAIL" \
+            --set-env-vars DRIVE_FOLDER_ID="$$FOLDER_ID",GCS_BUCKET="$$BUCKET",GCP_PROJECT="$$PROJECT_ID"
+
+          gcloud run jobs execute "sync-$$NAME" \
+            --project="$$PROJECT_ID" \
+            --region="$$REGION" \
+            --wait
+        done

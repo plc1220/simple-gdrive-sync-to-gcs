@@ -1,0 +1,5 @@
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-cloud-storage
+google-cloud-secret-manager
