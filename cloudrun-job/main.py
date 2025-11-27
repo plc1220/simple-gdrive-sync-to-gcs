@@ -30,7 +30,9 @@ def list_drive_files():
     """List files in the Drive folder."""
     resp = drive.files().list(
         q=f"'{DRIVE_FOLDER_ID}' in parents and trashed = false",
-        fields="files(id,name,mimeType)"
+        fields="files(id,name,mimeType)",
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True
     ).execute()
     return resp.get("files", [])
 
@@ -125,10 +127,21 @@ def process_file(f):
 # -----------------------------------------------------
 
 def main():
+    print(f"🔍 Checking folder: {DRIVE_FOLDER_ID}")
+    print(f"📦 Target bucket: {BUCKET_NAME}")
+    
     bucket = gcs.bucket(BUCKET_NAME)
     files = list_drive_files()
 
     print(f"Found {len(files)} files in folder {DRIVE_FOLDER_ID}")
+    
+    if len(files) == 0:
+        print("⚠️  No files found. Possible reasons:")
+        print("   - Folder is empty or only contains subfolders")
+        print("   - Folder is in a Shared Drive and needs special permissions")
+        print("   - Service account doesn't have access to this specific folder")
+        print("   - Folder ID might be incorrect")
+        return
 
     for f in files:
         pdf_bytes, pdf_name = process_file(f)
