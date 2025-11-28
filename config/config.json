@@ -1,10 +1,6 @@
 {
   "folders": [
     {
-      "name": "lc-test",
-      "id": "1WWEkIfKdXNznkHGc0_VheWuE9Sqz7rSS"
-    },
-    {
       "name": "data",
       "id": "1J_S559YEwa-F-aUVL9fcxlFzhwin4RVa"
     },
@@ -27,10 +23,6 @@
     {
       "name": "strat",
       "id": "1e_20KMnel2qPWqwosm2wKgF5b_73ZPBd"
-    },
-    {
-      "name": "mydrive",
-      "id": "1jC6Uxqm36quAVVWUuQduS_e2L5hNAGgg"
     }
   ]
 }
